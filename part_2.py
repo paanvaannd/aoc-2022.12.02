@@ -3,7 +3,6 @@
 # Import custom libraries
 from classes import Hand
 
-score = 0
 
 def decode(cyphertext):
     _plaintext = ""
@@ -35,13 +34,15 @@ def decode(cyphertext):
 
     return _plaintext
 
+
 # TODO: use argparse to allow custom data file input
 with open("./data.txt", "r") as file:
     data = file.read().splitlines()
 
-for _ in range(len(data)):
-    data[_] = data[_].split(" ")
+for i, round in enumerate(data):
+    data[i] = round.split(" ")
 
+score = 0
 for column_a, column_b in data:
     opponent_hand = Hand(decode(column_a))
     player_strategy = decode(column_b)
