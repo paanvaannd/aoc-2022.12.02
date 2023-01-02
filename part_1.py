@@ -4,12 +4,12 @@
 from classes import Hand
 
 
-def decode(cyphertext):
-    _plaintext = ""
+def decode(cyphertext: str):
+    _plaintext: str = ""
 
     # TODO: use TOML file for configuration
     # NOTE: implementing above TODO increases code reuse
-    codec = {
+    codec: dict = {
         "rock": {"A", "X"},
         "paper": {"B", "Y"},
         "scissor": {"C", "Z"}
@@ -29,11 +29,12 @@ def decode(cyphertext):
 with open("./data.txt", "r") as file:
     data = file.read().splitlines()
 
-for i, round in enumerate(data):
-    data[i] = round.split(" ")
-
-score = 0
-for column_a, column_b in data:
+score: int = 0
+round: str
+for round in data:
+    column_a: str
+    column_b: str
+    column_a, column_b = round.split(" ")
     opponent_hand = Hand(decode(column_a))
     player_hand = Hand(decode(column_b))
 
