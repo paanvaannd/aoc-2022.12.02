@@ -19,7 +19,7 @@ class Hand:
 
     def get_property(self, item_property: str, item_name: str) -> str | int:
         with connection:
-            cursor.execute(f"""SELECT {item_property} FROM 'Properties'
+            cursor.execute(f"""SELECT {item_property} FROM Properties
                             WHERE Name IS ?""", (item_name,))
             return cursor.fetchone()[0]
 
