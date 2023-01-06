@@ -2,87 +2,69 @@
 
 # Import built-in libraries
 import sqlite3
+from configparser import ConfigParser
 
 # Import custom libraries
 from classes import Hand
 
 
 def decode(cyphertext: str, codec: dict) -> str:
-    # TODO: use TOML file for configuration
-    # NOTE: implementing above TODO increases code reuse
-    # TODO: find dynamic way to assign plaintext
     _plaintext: str
-    if cyphertext in codec["rock"]:
-        _plaintext = "rock"
-    elif cyphertext in codec["paper"]:
-        _plaintext = "paper"
-    elif cyphertext in codec["scissor"]:
-        _plaintext = "scissor"
-    elif cyphertext in codec["lose"]:
-        _plaintext = "lose"
-    elif cyphertext in codec["draw"]:
-        _plaintext = "draw"
-    elif cyphertext in codec["win"]:
-        _plaintext = "win"
-    return _plaintext
+    for key in codec:
+        if key == cyphertext:
+            return codec[key]
 
 
-def cheat(strategy: str, reference: Hand) -> str:
-    player_choice: str
+def cheat(strategy: str, reference: Hand) -> Hand:
+    player_choice: Hand
     if strategy == "lose":
-        player_choice = reference.strength
+        player_choice = Hand(reference.strength)
     elif strategy == "win":
-        player_choice = reference.weakness
+        player_choice = Hand(reference.weakness)
     else:
-        player_choice = reference.item
+        player_choice = reference
     return player_choice
 
 
-assumed_codec: dict = {
-    "rock": {"A", "X"},
-    "paper": {"B", "Y"},
-    "scissor": {"C", "Z"}
-}
+# TODO: use argparse to allow custom config file
+cfg = ConfigParser()
+cfg.read("config.ini")
 
-intended_codec: dict = {
-    "rock": {"A"},
-    "paper": {"B"},
-    "scissor": {"C"},
-    "lose": {"X"},
-    "draw": {"Y"},
-    "win": {"Z"},
-}
-
-# TODO: use argparse to allow custom data file input
-connection = sqlite3.connect("data.db")
+connection = sqlite3.connect(str(cfg["DATABASE"]["filename"]))
 cursor = connection.cursor()
 with connection:
     cursor.execute("SELECT * FROM Input")
     data = cursor.fetchall()
+    cursor.execute("SELECT Name FROM Properties")
+    item_name_query_results = cursor.fetchall()
+    item_names: list = []
+    for result in item_name_query_results:
+        item_names.append(str(result[0]))  # Ensure values are strings
 
-for attempt in 1, 2:
-    score: int = 0
-    round: str
-    for round in data:
-        opponent_item: str
-        player_item: str
-        opponent_item, player_item = round
+score: int = 0
+round: str
+for round in data:
+    opponent_cypher: str
+    player_cypher: str
+    opponent_cypher, player_cypher = round
+    opponent_cypher = opponent_cypher.lower()
+    player_cypher = player_cypher.lower()
 
-        opponent_hand = Hand(decode(opponent_item,
-                                    assumed_codec if attempt == 1
-                                    else intended_codec))
-        player_hand = Hand(decode(player_item, assumed_codec) if attempt == 1
-                           else cheat(decode(player_item, intended_codec),
-                                      opponent_hand))
+    opponent_hand: Hand = Hand(decode(opponent_cypher, dict(cfg["CODEC"])))
+    instructions: str = decode(player_cypher, dict(cfg["CODEC"]))
+    player_hand: Hand
+    if instructions not in set(item_names):
+        player_hand = cheat(instructions, opponent_hand)
+    else:
+        player_hand = Hand(instructions)
 
-        score += player_hand.points
+    score += player_hand.points
 
-        if player_hand.weakness == opponent_hand.item:  # Loss
-            score += 0
-        elif player_hand.strength == opponent_hand.item:  # Win
-            score += 6
-        else:  # Tie
-            score += 3
+    if player_hand.weakness == opponent_hand.item:  # Loss
+        score += 0
+    elif player_hand.strength == opponent_hand.item:  # Win
+        score += 6
+    else:  # Draw
+        score += 3
 
-    print(f"Final score under {'assumed' if attempt == 1 else 'intended'} "
-          f"interpretation of cheatsheet: {score}")
+print(f"Final score: {score}")
