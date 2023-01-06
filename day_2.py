@@ -68,12 +68,16 @@ for attempt in 1, 2:
         player_item: str
         opponent_item, player_item = round
 
+        opponent_hand: Hand
+        player_hand: Hand
         opponent_hand = Hand(decode(opponent_item,
-                                    assumed_codec if attempt == 1
-                                    else intended_codec))
-        player_hand = Hand(decode(player_item, assumed_codec) if attempt == 1
-                           else cheat(decode(player_item, intended_codec),
-                                      opponent_hand))
+                                          assumed_codec if attempt == 1
+                                          else intended_codec))
+        if attempt == 1:
+            player_hand = Hand(decode(player_item, assumed_codec))
+        else:
+            player_hand = Hand(cheat(decode(player_item, intended_codec),
+                                     opponent_hand))
 
         score += player_hand.points
 
