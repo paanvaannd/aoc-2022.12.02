@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# Import built-in libraries
+import sqlite3
+
 # Import custom libraries
 from classes import Hand
 
@@ -51,21 +54,25 @@ intended_codec: dict = {
 }
 
 # TODO: use argparse to allow custom data file input
-with open("data.txt", "r") as file:
-    data: str = file.read().splitlines()
+connection = sqlite3.connect("data.db")
+cursor = connection.cursor()
+with connection:
+    cursor.execute("SELECT * FROM Input")
+    data = cursor.fetchall()
 
 for attempt in 1, 2:
     score: int = 0
     round: str
     for round in data:
-        column_a: str
-        column_b: str
-        column_a, column_b = round.split(" ")
+        opponent_item: str
+        player_item: str
+        opponent_item, player_item = round
 
-        opponent_hand = Hand(decode(column_a, assumed_codec if attempt == 1
+        opponent_hand = Hand(decode(opponent_item,
+                                    assumed_codec if attempt == 1
                                     else intended_codec))
-        player_hand = Hand(decode(column_b, assumed_codec) if attempt == 1
-                           else cheat(decode(column_b, intended_codec),
+        player_hand = Hand(decode(player_item, assumed_codec) if attempt == 1
+                           else cheat(decode(player_item, intended_codec),
                                       opponent_hand))
 
         score += player_hand.points
